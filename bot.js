@@ -1,5 +1,4 @@
 const Discord = require("discord.js");
-const guild = new Discord.Guild();
 const client = new Discord.Client();
 const api = require("./services/api");
 const endpoints = require("./services/endpoints");
@@ -11,26 +10,21 @@ client.on("ready", async () => {
 });
 
 client.on("message", async (message) => {
+  const [CMD_NAME, ...args] = message.content
+    .trim()
+    .substring(config.prefix.length)
+    .split(/\s+/);
+
   if (message.author.bot) return;
+  if (!message.content.startsWith(config.prefix)) return;
 
-  if (message.content.startsWith(config.prefix)) {
-    const [CMD_NAME, ...args] = message.content
-      .trim()
-      .substring(config.prefix.length)
-      .split(/\s+/);
-    const { voice } = message.member;
+  try {
+    delete require.cache[require.resolve(`./commands/${CMD_NAME}.js`)];
 
-    console.log(CMD_NAME);
-
-    if (CMD_NAME === "COMANDO QUE DESEJA PARA ATIVAR O BOT") {
-      if (!voice.channelID) {
-        message.reply("Enter to a channel");
-      } else {
-        voice.channel.join().then((connection) => {
-          connection.play("LOCAL DO SEU ARQUIVO MP3", { volume: 0.5 });
-        });
-      }
-    }
+    let commandFile = require(`./commands/${CMD_NAME}.js`);
+    commandFile.run(client, message, args);
+  } catch (e) {
+    console.log(e.stack);
   }
 });
 
